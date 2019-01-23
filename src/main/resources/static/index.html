@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WorldMusicForum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <!--script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.9.0.js"></script-->
+    <script src="lib/jquery/jquery.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-2.2.1.js"></script>
+  </head>
+  <body>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand" href="#">World Music Forum</a>
+        </div>
+    </div>
+    <div id="main" class="container">
+        <table class="table table-striped">
+          <thead>
+              <tr>
+                  <th>Id</th>
+                  <th>Song Name</th>
+                  <th>Artist</th>
+                  <th>Year</th>
+                  <th>Origin</th>
+              </tr>
+          </thead>
+          <tbody data-bind="foreach: songs">
+              <tr>
+                  <td data-bind="text: songId"></td>
+                  <td data-bind="text: songName"></td>
+                  <td data-bind="text: songArtist"></td>
+                  <td data-bind="text: songYear"></td>
+                  <td data-bind="text: songOrigin"></td>
+              </tr>
+          </tbody>
+      </table>
+
+      <button data-bind="click: beginAdd" class="btn">Add Song</button>
+    </div>
+
+    <div id="add" class="modal hide fade" tabindex="=1" role="dialog" aria-labelledby="addDialogLabel" aria-hidden="true">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="addDialogLabel">Add</h3>
+      </div>
+      <div class="modal-body">
+            <form class="form-horizontal">
+                <div class="control-group">
+                    <label class="control-label" for="inputSongName">Song Name</label>
+                    <div class="controls">
+                        <input data-bind="value: songName" type="text" id="inputSongName" placeholder="Song Name" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputSongArtist">Artist</label>
+                    <div class="controls">
+                        <input data-bind="value: songArtist" type="text" id="inputSongArtist" placeholder="Artist" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputSongArtist">Year</label>
+                    <div class="controls">
+                        <input data-bind="value: songYear" type="text" id="inputSongYear" placeholder="Year" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputSongOrigin">Origin</label>
+                    <div class="controls">
+                        <input data-bind="value: songOrigin" type="text" id="inputSongOrigin" placeholder="Origin" style="width: 150px;">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button data-bind="click: addSong" class="btn btn-primary">Add Song</button>
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+       
+        function SongsViewModel() {
+            var self = this;
+            self.songsURI = 'http://localhost:8086/wmf/songs/';
+            self.songs = ko.observableArray();
+
+            self.ajax = function(uri, method, data) {
+                var request = {
+                    url: uri,
+                    type: method,
+                    contentType: "application/json",
+                    cache: false,
+                    dataType: 'json',
+                    data: JSON.stringify(data),
+                    error: function(jqXHR) {
+                        console.log("ajax error " + jqXHR.status);
+                    }
+                };
+                return $.ajax(request);
+            }
+
+            self.beginAdd = function() {
+                $('#add').modal('show');
+            }
+
+
+
+            self.ajax(self.songsURI, 'GET').done(function(data) {
+              for (var i = 0; i < data.length; i++) {
+                self.songs.push({
+                    songId: ko.observable(data[i].songId),
+                    songName: ko.observable(data[i].songName),
+                    songArtist: ko.observable(data[i].songArtist),
+                    songYear: ko.observable(data[i].songYear),
+                    songOrigin: ko.observable(data[i].songOrigin)
+                });
+              }
+            });
+
+            self.add = function(song){
+              self.ajax(self.songsURI, 'POST', song).done(function(data) {
+                self.songs.push({
+                    songId: ko.observable(data.songId),
+                    songName: ko.observable(data.songName),
+                    songArtist: ko.observable(data.songArtist),
+                    songYear: ko.observable(data.songYear),
+                    songOrigin: ko.observable(data.songOrigin)
+                });
+              });
+
+
+            }
+          }
+
+          function AddSongViewModel() {
+            var self = this;
+            self.songName = ko.observable();
+            self.songArtist = ko.observable();
+            self.songYear = ko.observable();
+            self.songOrigin = ko.observable();
+
+            self.addSong = function() {
+                $('#add').modal('hide');
+                  songsViewModel.add({
+                    songName: self.songName(),
+                    songArtist: self.songArtist(),
+                    songYear: self.songYear(),
+                    songOrigin: self.songOrigin()
+                });
+                self.songName("");
+                self.songArtist("");
+                self.songYear("");
+                self.songOrigin("");
+            }
+          }
+
+          var songsViewModel = new SongsViewModel();
+          var addSongViewModel = new AddSongViewModel();
+          ko.applyBindings(songsViewModel, $('#main')[0]);
+          ko.applyBindings(addSongViewModel, $('#add')[0]);
+          
+    </script>
+</body>
+</html>
